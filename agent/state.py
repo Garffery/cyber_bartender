@@ -12,9 +12,9 @@ class CocktailInfo(BaseModel):
     recommendation: str = Field(...,description="推荐这杯鸡尾酒的理由")
 
 class Question(BaseModel):
-    """当客户的需求不清晰的时候调用."""
+    """当客人描述鸡尾酒需求不清晰的时候调用."""
     question: str = Field(
-        description="向客户提问的一个问题,在客户需求不清晰的时候,用来澄清客户的需求"
+        description="向客户提问的一个问题,在客户对描述的鸡尾酒不清晰的时候,用来澄清客户的需求"
     )
 
 class BartenderState(TypedDict):

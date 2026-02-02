@@ -5,7 +5,7 @@ import os
 from langchain_community.tools import TavilySearchResults
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.types import interrupt
+from langgraph.types import interrupt,Command
 
 from agent.prompts import BARTENDER_PROMPT
 from agent.state import BartenderState, Question
@@ -24,12 +24,6 @@ async def BartenderNode(state:BartenderState):
 async def BartenderToolNode(state:BartenderState):
     result = []
     for tool_call in state["messages"][-1].tool_calls:
-        observation = await tool.ainvoke(tool_call["args"])
-        result.append({"role": "tool",
-                       "content": observation,
-                       "name": tool_call["name"],
-                       "tool_call_id": tool_call["id"]})
-
         if tool_call["name"] == "Question":
             human_value = interrupt(
                 {
@@ -37,6 +31,13 @@ async def BartenderToolNode(state:BartenderState):
                 }
             )
             result.append({"role":"user","content":human_value})
+        else:
+            observation = await tool.ainvoke(tool_call["args"])
+            result.append({"role": "user",
+                           "content": observation,
+                           "name": tool_call["name"],
+                           "tool_call_id": tool_call["id"]})
+
 
     return {"messages":result}
 
@@ -78,10 +79,20 @@ _set_env("TAVILY_API_KEY")
 
 async def main():
     app = workflow.compile(checkpointer = MemorySaver())
-    inputs = {"messages": "帮我推荐一杯鸡尾酒"}
+    inputs = {"messages": "帮我推荐一杯使用威士忌作为基酒的鸡尾酒"}
     thread_config = {"configurable": {"thread_id": 1}}
+    is_interrupt = False
     async for event in app.astream(inputs, config=thread_config):
+        is_interrupt = True if "__interrupt__" in event else False
         print(event)
+    if is_interrupt:
+        user_answer = "我今天的心情不错,想要清爽的"
+        command = Command(resume=user_answer)
+        print("中断后==============")
+        async for event in app.astream(command, config=thread_config):
+
+            print(event)
+
 
 asyncio.run(main())
 
