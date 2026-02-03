@@ -8,6 +8,10 @@ from typing_extensions import Annotated
 
 
 class CocktailInfo(BaseModel):
+    """当信息足够，进行推荐的时候调用."""
+    name: str = Field(..., description='鸡尾酒的英文名称')
+    cn_name: str = Field(..., description='鸡尾酒的中文名称')
+    description: str = Field(..., description='一段富有诗意、简短的鸡尾酒描述')
     alcohol_content: str = Field(..., description='鸡尾酒的酒精度')
     texture: str = Field(..., description="鸡尾酒的口感, 例如：清爽")
     recommendation: str = Field(...,description="推荐这杯鸡尾酒的理由")

@@ -13,14 +13,14 @@ from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import START, END, StateGraph
 
 from agent.prompts import BARTENDER_SYSTEM_PROMPT
-from agent.state import BartenderState, Question, ExtractRequirements
+from agent.state import BartenderState, Question, ExtractRequirements, CocktailInfo
 
 # Load environment variables from .env file
 load_dotenv()
 
 async def get_bartender_tool():
     """Returns the list of tools available to the bartender."""
-    tools = [TavilySearchResults(max_results=1), tool(Question), tool(ExtractRequirements)]
+    tools = [TavilySearchResults(max_results=1), tool(Question), tool(ExtractRequirements), tool(CocktailInfo)]
     return tools
 
 async def BartenderNode(state: BartenderState):
@@ -54,6 +54,7 @@ async def BartenderToolNode(state: BartenderState):
     
     result = []
     require = []
+    final_recommendation = None
     last_message = state["messages"][-1]
     
     if hasattr(last_message, 'tool_calls'):
@@ -76,7 +77,11 @@ async def BartenderToolNode(state: BartenderState):
                 res = tool_call["args"]
                 require.append(res["requirements"])
                 logger.info(f"需求：{res}")
-
+            elif tool_name == "CocktailInfo":
+                logger.info("========进行推荐===========")
+                res = tool_call["args"]
+                logger.info(f"推荐的鸡尾酒：{res}")
+                final_recommendation = res
             
             elif tool_name in tool_map:
                 selected_tool = tool_map[tool_name]
@@ -98,8 +103,12 @@ async def BartenderToolNode(state: BartenderState):
                     "name": tool_name,
                     "tool_call_id": tool_call["id"]
                 })
-
-    return {"messages": result, "user_requirements":require}
+    final_result = {}
+    final_result["messages"] = result
+    final_result["user_requirements"] = require
+    final_result["final_recommendation"] = final_recommendation
+    logger.info(f"返回结果：{final_result}")
+    return final_result
 
 async def should_use_tool(state: BartenderState):
     """Determines the next node based on the last message."""

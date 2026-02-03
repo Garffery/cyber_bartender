@@ -31,6 +31,7 @@ class ChatResponse(BaseModel):
     response: str
     is_interrupt: bool = False
     interrupt_question: Optional[str] = None
+    cocktail_info: Optional[Dict[str, Any]] = None
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -39,6 +40,7 @@ async def chat(request: ChatRequest):
     final_response = ""
     is_interrupt = False
     interrupt_question = None
+    cocktail_info = None
 
     try:
         input_data = None
@@ -89,11 +91,21 @@ async def chat(request: ChatRequest):
                         final_response = last_msg.content
                     elif isinstance(last_msg, dict):
                         final_response = last_msg.get("content", "")
+            
+            # Capture the final cocktail recommendation
+            if "BartenderToolNode" in event:
+                node_output = event["BartenderToolNode"]
+                if "final_recommendation" in node_output:
+                    cocktail_info = node_output["final_recommendation"]
+                    # Also set a default response text if empty
+                    if not final_response:
+                        final_response = "Here is your cocktail recommendation."
 
         return ChatResponse(
             response=final_response,
             is_interrupt=is_interrupt,
-            interrupt_question=str(interrupt_question) if interrupt_question else None
+            interrupt_question=str(interrupt_question) if interrupt_question else None,
+            cocktail_info=cocktail_info if cocktail_info else None,
         )
 
     except Exception as e:
