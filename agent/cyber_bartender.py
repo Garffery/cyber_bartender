@@ -17,7 +17,7 @@ async def BartenderNode(state:BartenderState):
     llm = ChatDeepSeek(model="deepseek-chat").bind_tools(tools)
     bartender_chain = BARTENDER_PROMPT | llm
     print(f"当前的state:{state}")
-    res = await bartender_chain.ainvoke({"messages":state["messages"][-1].content})
+    res = await bartender_chain.ainvoke({"messages":state["messages"]})
     return {"messages":res}
 
 
@@ -78,7 +78,7 @@ _set_env("TAVILY_API_KEY")
 
 async def main():
     app = workflow.compile(checkpointer = MemorySaver())
-    inputs = {"messages": "帮我推荐一杯鸡尾酒"}
+    inputs = {"messages": "大吉利的配方是什么"}
     thread_config = {"configurable": {"thread_id": 1}}
     async for event in app.astream(inputs, config=thread_config):
         print(event)
