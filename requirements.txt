@@ -1,0 +1,12 @@
+langchain
+langchain-community
+langchain-core
+langgraph
+langchain-deepseek
+tavily-python
+fastapi
+uvicorn
+streamlit
+python-dotenv
+pydantic
+loguru
